@@ -2,28 +2,14 @@ const express = require("express");
 const session = require("express-session");
 const passport = require("passport");
 const initPassport = require("./passport_config");
-const fs = require("fs");
-const path = require("path");
-const { promisify } = require("util");
+const mongoose = require("mongoose");
+const MongoStore = require("connect-mongo");
 
-const readFile = promisify(fs.readFile);
+mongoose
+  .connect("mongodb://127.0.0.1:27017/test")
+  .then(() => console.log("Connected to MongoDB!"));
 
-async function getUserByName(username) {
-  const users = await readFile(path.join(__dirname, "/users.json"), {
-    encoding: "utf8",
-  });
-  const user = JSON.parse(users).find((user) => user.username === username);
-  return user;
-}
-async function getUserById(id) {
-  const users = await readFile(path.join(__dirname, "/users.json"), {
-    encoding: "utf8",
-  });
-  const user = JSON.parse(users).find((user) => user.id === id);
-  return user;
-}
-
-initPassport(passport, getUserByName, getUserById);
+initPassport(passport);
 
 const checkAuthentication = (req, res, next) => {
   if (!req.isAuthenticated()) {
@@ -40,6 +26,8 @@ app.use(
     secret: "my-secret",
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: "mongodb://127.0.0.1:27017/test" }),
+    cookie: { maxAge: 1000 * 60 },
   })
 );
 
